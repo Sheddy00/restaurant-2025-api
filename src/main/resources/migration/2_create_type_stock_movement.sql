@@ -1,0 +1,1 @@
+CREATE TYPE mouvement_type AS ENUM ('IN', 'OUT');

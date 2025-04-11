@@ -1,0 +1,1 @@
+CREATE TYPE unit AS ENUM ('G', 'U', 'L');
