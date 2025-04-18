@@ -2,17 +2,17 @@ package edu.hei.school.restaurant.dao.operations;
 
 import edu.hei.school.restaurant.dao.DataSource;
 import edu.hei.school.restaurant.dao.PostgresNextValId;
+import edu.hei.school.restaurant.dao.mapper.IngredientMapper;
 import edu.hei.school.restaurant.dao.mapper.OrderMapper;
+import edu.hei.school.restaurant.model.DishOrder;
 import edu.hei.school.restaurant.model.Ingredient;
 import edu.hei.school.restaurant.model.Order;
 import edu.hei.school.restaurant.service.exception.ServerException;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +21,7 @@ import java.util.List;
 public class OrderCrudOperation implements CrudOperations<Order> {
     private final DataSource dataSource;
     private final OrderMapper orderMapper;
+    private final DishOrderOperations dishOrderOperations;
     final PostgresNextValId nextValId = new PostgresNextValId();
 
     @Override
@@ -45,12 +46,88 @@ public class OrderCrudOperation implements CrudOperations<Order> {
 
     @Override
     public Order findById(Long id) {
-        return null;
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "select o.id, o.reference, o.created_at, o.status from orders o where o.id = ?"
+             )) {
+            statement.setLong(1, id);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return orderMapper.apply(rs);
+                } else {
+                    return null;
+                }
+            }
+        } catch (SQLException e) {
+            throw new ServerException(e);
+        }
     }
 
+    public Order save(Order order) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     """
+                     insert into orders (id, reference, created_at, status) values (?, ?, ?, ?)
+                     on conflict (id) do update set reference = excluded.reference,
+                         created_at = excluded.created_at,
+                         status = excluded.status
+                     returning id, reference, created_at, status
+                     """
+             )) {
+
+            Long id = (order.getId() == null) ? nextValId.nextID("orders", connection) : order.getId();
+
+            statement.setLong(1, id);
+            statement.setString(2, order.getReference());
+            statement.setTimestamp(3, java.sql.Timestamp.valueOf(String.valueOf(order.getCreatedAt())));
+            statement.setString(4, order.getActualStatus().name());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return orderMapper.apply(resultSet);
+                } else {
+                    throw new ServerException("Failed to save order");
+                }
+            }
+        } catch (SQLException e) {
+            throw new ServerException(e);
+        }
+    }
+
+    @SneakyThrows
     @Override
     public List<Order> saveAll(List<Order> entities) {
-        throw new RuntimeException("Not implemented yet");
+        List<Order> orders = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection()) {
+             entities.forEach(entityToSave -> {
+                 try (PreparedStatement statement = connection.prepareStatement(
+                         """
+                          insert into orders (id, reference, created_at, status) values (?, ?, ?, ?)
+                          on conflict (id) do update set reference = excluded.reference,
+                              created_at = excluded.created_at,
+                              status = excluded.status
+                          returning id, reference, created_at, status
+                          """
+                 )) {
+                     Long id = (entityToSave.getId() == null) ? nextValId.nextID("orders", connection) : entityToSave.getId();
+                     statement.setLong(1, id);
+                     statement.setString(2, entityToSave.getReference());
+                     statement.setTimestamp(3, Timestamp.valueOf(String.valueOf(entityToSave.getCreatedAt())));
+                     statement.setString(4, entityToSave.getActualStatus().name());
+                     ResultSet resultSet = statement.executeQuery();
+
+                     if (resultSet.next()) {
+                         Order orderToSave = orderMapper.apply(resultSet);
+                         List<DishOrder> dishOrders = dishOrderOperations.saveAll(entityToSave.getDishOrders());
+                         orderToSave.setDishOrders(dishOrders);
+                         orders.add(orderMapper.apply(resultSet));
+                     }
+                 } catch (SQLException e) {
+                     throw new ServerException(e);
+                 }
+             });
+             return orders;
+        }
     }
 
     public List<Order> getByReference(String reference) {
