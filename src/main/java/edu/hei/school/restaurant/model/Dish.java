@@ -44,6 +44,15 @@ public class Dish {
         return totalCost;
     }
 
+    public double getGrossMargin() {
+        return getUnitPrice() - getTotalIngredientCost(LocalDate.now(), dishIngredients);
+    }
+
+    public double getGrossMargin(LocalDate date) {
+        double ingredientCost = getTotalIngredientCost(date, dishIngredients);
+        return ((unitPrice - ingredientCost) / unitPrice * 100);
+    }
+
     public Double getAvailableQuantity() {
         List<Double> allQuantitiesPossible = new ArrayList<>();
         for (DishIngredient dishIngredient : dishIngredients) {

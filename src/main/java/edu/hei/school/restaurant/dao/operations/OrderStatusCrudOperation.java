@@ -2,10 +2,12 @@ package edu.hei.school.restaurant.dao.operations;
 
 import edu.hei.school.restaurant.dao.DataSource;
 import edu.hei.school.restaurant.dao.PostgresNextValId;
+import edu.hei.school.restaurant.dao.mapper.OrderStatusMapper;
 import edu.hei.school.restaurant.dao.mapper.PriceMapper;
 import edu.hei.school.restaurant.model.OrderStatus;
 import edu.hei.school.restaurant.model.Price;
 import edu.hei.school.restaurant.service.exception.ServerException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -17,10 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
+@RequiredArgsConstructor
 public class OrderStatusCrudOperation implements CrudOperations<OrderStatus> {
     @Autowired
     private DataSource dataSource;
-
+    private final OrderStatusMapper orderStatusMapper;
     final PostgresNextValId nextValId = new PostgresNextValId();
 
     @Override
@@ -47,10 +50,10 @@ public class OrderStatusCrudOperation implements CrudOperations<OrderStatus> {
             statement.setLong(1, idOrder);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    Price price = priceMapper.apply(resultSet);
-                    prices.add(price);
+                    OrderStatus status = orderStatusMapper.apply(resultSet);
+                    orderStatuses.add(status);
                 }
-                return prices;
+                return orderStatuses;
             }
         } catch (SQLException e) {
             throw new ServerException(e);

@@ -30,7 +30,7 @@ public class DishCrudOperations implements CrudOperations<Dish> {
         List<Dish> dishes = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(
-                     "select d.id, d.name, d.unit_price from dish s order by d.id asc limit ? offset ?")) {
+                     "select d.id, d.name, d.unit_price from dish d order by d.id asc limit ? offset ?")) {
             statement.setInt(1, size);
             statement.setInt(2, size * (page - 1));
             try (ResultSet resultSet = statement.executeQuery()) {
