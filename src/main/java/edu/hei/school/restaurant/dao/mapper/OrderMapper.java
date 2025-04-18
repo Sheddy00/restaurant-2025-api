@@ -1,8 +1,6 @@
 package edu.hei.school.restaurant.dao.mapper;
 
-import edu.hei.school.restaurant.dao.operations.OrderCrudOperation;
 import edu.hei.school.restaurant.dao.operations.OrderStatusCrudOperation;
-import edu.hei.school.restaurant.model.Dish;
 import edu.hei.school.restaurant.model.Order;
 import edu.hei.school.restaurant.model.OrderStatus;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +8,6 @@ import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 
 import java.sql.ResultSet;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -28,7 +25,7 @@ public class OrderMapper implements Function<ResultSet, Order> {
         order.setId(resultSet.getLong("id"));
         order.setReference(resultSet.getString("reference"));
         order.setCreatedAt(resultSet.getTimestamp("created_at").toInstant());
-        //order.setStatusHistory();
+        order.setStatusHistory(orderStatuses);
         return order;
     }
 }

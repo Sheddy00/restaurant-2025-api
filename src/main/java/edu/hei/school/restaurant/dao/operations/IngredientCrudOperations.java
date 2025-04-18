@@ -79,7 +79,7 @@ public class IngredientCrudOperations implements CrudOperations<Ingredient> {
                                      + " on conflict (id) do update set name=excluded.name"
                                      + " returning id, name")) {
 
-                    long id = entityToSave.getId() == null ? nextValId.nextID("ingrdient", connection) : entityToSave.getId();
+                    long id = entityToSave.getId() == null ? nextValId.nextID("ingredient", connection) : entityToSave.getId();
                     statements.setLong(1, id);
                     statements.setString(2, entityToSave.getName());
                     ResultSet resultSet = statements.executeQuery();
