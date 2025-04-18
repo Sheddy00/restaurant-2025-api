@@ -1,5 +1,6 @@
 package edu.hei.school.restaurant.endpoint;
 
+import edu.hei.school.restaurant.endpoint.mapper.OrderRestMapper;
 import edu.hei.school.restaurant.model.Order;
 import edu.hei.school.restaurant.service.OrderService;
 import edu.hei.school.restaurant.service.exception.ClientException;
@@ -18,13 +19,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderRestController {
     private final OrderService orderService;
+    private final OrderRestMapper orderRestMapper;
 
     @GetMapping("/orders")
     public ResponseEntity<?> getAll(
             @RequestParam(name = "page", required = false) Integer page,
             @RequestParam(name = "pageSize", required = false) Integer pageSize){
         try {
-            return ResponseEntity.ok(orderService.findAll(page, pageSize));
+            return ResponseEntity.ok(
+                    orderService.findAll(page, pageSize)
+                            .stream()
+                            .map(orderRestMapper::toRest)
+                            .toList()
+            );
         } catch (NotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (ClientException e) {
@@ -35,12 +42,14 @@ public class OrderRestController {
     }
 
     @GetMapping("/orders/{reference}")
-    public ResponseEntity<?> searchOrders (
-            @PathVariable String reference
-    ) {
+    public ResponseEntity<?> searchOrders(@PathVariable String reference) {
         try {
             List<Order> orders = orderService.findByReference(reference);
-            return ResponseEntity.ok(orders);
+            return ResponseEntity.ok(
+                    orders.stream()
+                            .map(orderRestMapper::toRest)
+                            .toList()
+            );
         } catch (NotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (ClientException e) {
