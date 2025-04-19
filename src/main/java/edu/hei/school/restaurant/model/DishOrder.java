@@ -16,6 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 public class DishOrder {
     private Long id;
+    private Long orderId;
     private Dish dish;
     private Double quantityToOrder;
     private List<DishOrderStatus> statusHistory = new ArrayList<>();

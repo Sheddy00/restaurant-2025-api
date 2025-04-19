@@ -23,8 +23,8 @@ public class OrderRestController {
 
     @GetMapping("/orders")
     public ResponseEntity<?> getAll(
-            @RequestParam(name = "page", required = false) Integer page,
-            @RequestParam(name = "pageSize", required = false) Integer pageSize){
+            @RequestParam(name = "page", required = true, defaultValue = "1") Integer page,
+            @RequestParam(name = "pageSize", required = true, defaultValue = "10") Integer pageSize){
         try {
             return ResponseEntity.ok(
                     orderService.findAll(page, pageSize)

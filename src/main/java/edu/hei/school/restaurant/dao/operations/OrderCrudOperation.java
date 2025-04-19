@@ -29,7 +29,7 @@ public class OrderCrudOperation implements CrudOperations<Order> {
         List<Order> orders = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(
-                     "select os.id, os.reference, os.created_at from \"orders\" os /*order by os.id asc*/ limit ? offset ?")) {
+                     "select os.id, os.reference, os.created_at from \"orders\" os limit ? offset ?")) {
             statement.setInt(1, size);
             statement.setInt(2, size * (page - 1));
             try (ResultSet resultSet = statement.executeQuery()) {
@@ -48,7 +48,7 @@ public class OrderCrudOperation implements CrudOperations<Order> {
     public Order findById(Long id) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(
-                     "select o.id, o.reference, o.created_at, o.status from orders o where o.id = ?"
+                     "select os.id, os.reference, os.created_at, os.status from \"orders\" os where os.id = ?"
              )) {
             statement.setLong(1, id);
             try (ResultSet rs = statement.executeQuery()) {
@@ -67,7 +67,7 @@ public class OrderCrudOperation implements CrudOperations<Order> {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(
                      """
-                     insert into orders (id, reference, created_at, status) values (?, ?, ?, ?)
+                     insert into \"orders\" (id, reference, created_at, status) values (?, ?, ?, ?)
                      on conflict (id) do update set reference = excluded.reference,
                          created_at = excluded.created_at,
                          status = excluded.status
@@ -102,7 +102,7 @@ public class OrderCrudOperation implements CrudOperations<Order> {
              entities.forEach(entityToSave -> {
                  try (PreparedStatement statement = connection.prepareStatement(
                          """
-                          insert into orders (id, reference, created_at, status) values (?, ?, ?, ?)
+                          insert into \"orders\" (id, reference, created_at, status) values (?, ?, ?, ?)
                           on conflict (id) do update set reference = excluded.reference,
                               created_at = excluded.created_at,
                               status = excluded.status
@@ -134,7 +134,7 @@ public class OrderCrudOperation implements CrudOperations<Order> {
         List<Order> orders = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
         PreparedStatement statement = connection.prepareStatement(
-                "select o.id, o.reference, o.created_at from orders o where o.reference like ?"
+                "select os.id, os.reference, os.created_at from \"orders\" os where os.reference like ?"
         )) {
             statement.setString(1, "%" +reference+ "%");
             try (ResultSet resultSet = statement.executeQuery()) {

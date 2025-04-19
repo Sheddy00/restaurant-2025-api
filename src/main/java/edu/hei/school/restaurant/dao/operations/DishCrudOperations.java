@@ -71,7 +71,7 @@ public class DishCrudOperations implements CrudOperations<Dish> {
                         connection.prepareStatement("insert into dish (id, name, unit_price) values (?, ?, ?)" +
                                 " on conflict (id) do update set name.exclude, unit_price.exclude" +
                                 " returning id, name, unit_price")) {
-                    long id = entityToSave.getId() == null ? nextValId.nextID("dish", connection) : entityToSave.getId();
+                    Long id = entityToSave.getId() == null ? nextValId.nextID("dish", connection) : entityToSave.getId();
                     statement.setLong(1, id);
                     statement.setString(2, entityToSave.getName());
                     statement.setDouble(3, entityToSave.getUnitPrice());
