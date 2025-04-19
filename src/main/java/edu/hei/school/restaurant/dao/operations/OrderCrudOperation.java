@@ -4,15 +4,16 @@ import edu.hei.school.restaurant.dao.DataSource;
 import edu.hei.school.restaurant.dao.PostgresNextValId;
 import edu.hei.school.restaurant.dao.mapper.IngredientMapper;
 import edu.hei.school.restaurant.dao.mapper.OrderMapper;
-import edu.hei.school.restaurant.model.DishOrder;
-import edu.hei.school.restaurant.model.Ingredient;
-import edu.hei.school.restaurant.model.Order;
+import edu.hei.school.restaurant.model.*;
+import edu.hei.school.restaurant.model.enums.StatusEnum;
+import edu.hei.school.restaurant.service.exception.NotFoundException;
 import edu.hei.school.restaurant.service.exception.ServerException;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Repository;
 
 import java.sql.*;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -148,4 +149,45 @@ public class OrderCrudOperation implements CrudOperations<Order> {
             throw new ServerException(e);
         }
     }
+
+    public void updateDishStatus(String orderReference, Long dishId, StatusEnum newStatus) {
+        try (Connection connection = dataSource.getConnection()) {
+            Long dishOrderId = null;
+
+            try (PreparedStatement ps = connection.prepareStatement(
+                    """
+                        select do.id
+                        from orders o
+                        join dish_order do on o.id = do.id_order
+                        where o.reference = ? and do.id_dish = ?
+                    """
+            )) {
+                ps.setString(1, orderReference);
+                ps.setLong(2, dishId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        dishOrderId = rs.getLong("id");
+                    } else {
+                        throw new NotFoundException("Dish with ID " + dishId + " not found in order " + orderReference);
+                    }
+                }
+            }
+
+            try (PreparedStatement ps = connection.prepareStatement(
+                    """
+                            insert into dish_order_status (id_dish_order, status, created_at)
+                            values (?, ?, ?)
+                        """
+            )) {
+                ps.setLong(1, dishOrderId);
+                ps.setString(2, newStatus.name());
+                ps.setTimestamp(3, Timestamp.from(Instant.now()));
+                ps.executeUpdate();
+            }
+
+        } catch (SQLException e) {
+            throw new ServerException("Failed to update dish status");
+        }
+    }
+
 }
