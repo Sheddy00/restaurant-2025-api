@@ -1,4 +1,6 @@
 package edu.hei.school.restaurant.endpoint.rest;
 
-public record DishStatusUpdateRequest() {
+import edu.hei.school.restaurant.model.enums.StatusEnum;
+
+public record DishStatusUpdateRequest(StatusEnum newStatus) {
 }
